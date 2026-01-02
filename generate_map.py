@@ -4,9 +4,12 @@
 # requires-python = ">=3.12"
 # dependencies = ["folium"]
 # ///
+import itertools
 import requests
 import folium
 import time
+from unittest.mock import patch
+from branca.element import Element
 
 CALLSIGN = "HA5LA"
 OUT_HTML = "map.html"
@@ -20,19 +23,22 @@ lats = [a["summit"]["coordinates"]["latitude"] for a in data]
 lons = [a["summit"]["coordinates"]["longitude"] for a in data]
 center = (sum(lats)/len(lats), sum(lons)/len(lons))
 
-# Create map
-m = folium.Map(
-    location=center,
-    zoom_start=8,
-    tiles="OpenStreetMap",
-    control_scale=True,
-    prefer_canvas=True
-)
+ids = map(lambda i: str(i), itertools.count())
 
-for a in data:
-    folium.Marker(
-        location=(a["summit"]["coordinates"]["latitude"], a["summit"]["coordinates"]["longitude"]),
-        popup=f'{a["summit"]["code"]} {a["summit"]["name"]} ({a["date"][0:10]})'
-    ).add_to(m)
+with patch.object(Element, '_generate_id', side_effect=ids):
+    # Create map
+    m = folium.Map(
+        location=center,
+        zoom_start=8,
+        tiles="OpenStreetMap",
+        control_scale=True,
+        prefer_canvas=True
+    )
 
-m.save(OUT_HTML)
+    for a in data:
+        folium.Marker(
+            location=(a["summit"]["coordinates"]["latitude"], a["summit"]["coordinates"]["longitude"]),
+            popup=f'{a["summit"]["code"]} {a["summit"]["name"]} ({a["date"][0:10]})'
+        ).add_to(m)
+
+    m.save(OUT_HTML)

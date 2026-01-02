@@ -7,12 +7,12 @@
 import requests
 import math
 import mercantile
+import os
 from PIL import Image, ImageDraw
 from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
 from pathlib import Path
 
-CALLSIGN = "HA5LA"
 OUT_PNG = "map.png"
 
 TARGET_WIDTH = 1200
@@ -26,7 +26,7 @@ MARKER_RADIUS = 4
 # ------------------------------------------------------------
 # Fetch activation data from SOTL.as
 # ------------------------------------------------------------
-url = f"https://sotl.as/api/activations/{CALLSIGN}"
+url = f'https://sotl.as/api/activations/{os.environ["CALLSIGN"]}'
 data = requests.get(url, timeout=30).json()
 
 points = [

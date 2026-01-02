@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  CALLSIGN: ${{ vars.CALLSIGN }}
+
 jobs:
   build:
     runs-on: ubuntu-latest

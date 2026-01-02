@@ -8,14 +8,14 @@ import itertools
 import requests
 import folium
 import time
+import os
 from unittest.mock import patch
 from branca.element import Element
 
-CALLSIGN = "HA5LA"
 OUT_HTML = "map.html"
 
 # Fetch activation data
-url = f"https://sotl.as/api/activations/{CALLSIGN}"
+url = f'https://sotl.as/api/activations/{os.environ["CALLSIGN"]}'
 data = requests.get(url, timeout=30).json()
 
 # Center map

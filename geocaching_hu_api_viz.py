@@ -183,13 +183,16 @@ if not dates1 or not dates2:
     print("\n❌ Nem sikerült feldolgozni az adatokat!")
     exit(1)
 
+# Legutóbbi megtalálás dátuma (ez lesz a "mai" nap)
+current_date = max(dates1[-1], dates2[-1])
+
 # ========== TREND SZÁMÍTÁS ==========
 slope1, intercept1 = linear_regression(dates1, counts1, RECENT_DAYS)
 slope2, intercept2 = linear_regression(dates2, counts2, RECENT_DAYS)
 
 # Jövőbeli predikció (1 év)
 future_days = 365
-last_date = max(dates1[-1], dates2[-1])
+last_date = current_date
 future_dates = [last_date + timedelta(days=i) for i in range(0, future_days, 30)]
 
 pred1 = predict_counts(dates1, slope1, intercept1, dates1[0], future_dates)
@@ -228,9 +231,9 @@ if can_catch and catch_date < future_dates[-1]:
              zorder=10, markeredgecolor='darkgreen', markeredgewidth=1.5)
     plt.axvline(x=catch_date, color='green', linestyle=':', alpha=0.5, linewidth=2)
 
-# Mai dátum
-plt.axvline(x=datetime.now(), color='red', linestyle='--',
-            alpha=0.5, label='Ma', linewidth=2)
+# Legutóbbi megtalálás dátuma
+plt.axvline(x=current_date, color='red', linestyle='--',
+            alpha=0.5, label=f'Legutóbbi megtalálás: {current_date.strftime("%Y-%m-%d")}', linewidth=2)
 
 plt.xlabel('Dátum', fontsize=14, fontweight='bold')
 plt.ylabel('Találatok száma', fontsize=14, fontweight='bold')
@@ -279,7 +282,7 @@ else:
     print(f"\n🤝 Pontosan ugyanannyi találatotok van!")
 
 if can_catch:
-    days_diff = (catch_date - datetime.now()).days
+    days_diff = (catch_date - current_date).days
     months_diff = days_diff / 30
     print(f"\n🎯 KIVÁLÓ HÍR! A jelenlegi tempóval utol fogod érni!")
     print(f"   📅 Becsült dátum: {catch_date.strftime('%Y. %B %d.')}")
@@ -306,4 +309,5 @@ print("=" * 60)
 
 print(f"\n✅ Sikeres futás!")
 print(f"📊 Grafikon: {OUTPUT_FILE}")
+print(f"📅 Referencia dátum: {current_date.strftime('%Y-%m-%d')} (legutóbbi megtalálás)")
 print(f"💡 TIP: Használd GitHub Actions-ben napi futáshoz!")

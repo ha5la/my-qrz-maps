@@ -29,21 +29,21 @@ jobs:
           key: osm-tile-cache
           path: tile_cache/
 
-      - name: Generate map.html
+      - name: Generate sota.html
         run: |
           ./generate_map.py
           mkdir output
-          mv map.html output/
+          mv sota.html output/
 
       - name: Install png postprocess tooling
         run: |
           sudo apt-get install -y --no-install-recommends pngcrush pngquant
 
-      - name: Generate map.png
+      - name: Generate sota.png
         run: |
           ./generate_map_png.py
           mkdir -p output
-          ./postprocess-png.sh map.png output/map.png
+          ./postprocess-png.sh sota.png output/sota.png
 
       - name: Publish to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4

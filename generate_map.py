@@ -12,8 +12,6 @@ import os
 from unittest.mock import patch
 from branca.element import Element
 
-OUT_HTML = "map.html"
-
 def get_callsign():
     callsign = os.getenv("CALLSIGN")
     return callsign if callsign else os.environ["GITHUB_REPOSITORY_OWNER"]
@@ -45,4 +43,4 @@ with patch.object(Element, '_generate_id', side_effect=ids):
             popup=f'{a["summit"]["code"]} {a["summit"]["name"]} ({a["date"][0:10]})'
         ).add_to(m)
 
-    m.save(OUT_HTML)
+    m.save("sota.html")

@@ -13,7 +13,7 @@ from PIL.PngImagePlugin import PngInfo
 from io import BytesIO
 from pathlib import Path
 
-OUT_PNG = "map.png"
+OUT_PNG = "sota.png"
 
 TARGET_WIDTH = 1200
 TARGET_HEIGHT = 800

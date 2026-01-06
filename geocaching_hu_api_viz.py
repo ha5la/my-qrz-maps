@@ -229,26 +229,112 @@ catch_date, can_catch = predict_catch_date(
 # ========== PLOTLY GRAFIKON ==========
 fig = go.Figure()
 
-# Tényleges adatok - Személy 1
+# Közös időskála létrehozása (minden nap az első és utolsó találat között)
+start_date = min(dates1[0], dates2[0])
+end_date = max(dates1[-1], dates2[-1])
+all_dates = []
+current = start_date
+while current <= end_date:
+    all_dates.append(current)
+    current += timedelta(days=1)
+
+# Interpolált értékek számítása mindkét felhasználóhoz
+def interpolate_values(dates, counts, all_dates):
+    result = []
+    for target_date in all_dates:
+        # Megkeressük a legutolsó ismert értéket
+        val = 0
+        for i, d in enumerate(dates):
+            if d <= target_date:
+                val = counts[i]
+            else:
+                break
+        result.append(val)
+    return result
+
+interp_counts1 = interpolate_values(dates1, counts1, all_dates)
+interp_counts2 = interpolate_values(dates2, counts2, all_dates)
+
+# Különbségek számítása
+diff_values = []
+diff_percent = []
+diff_text = []
+
+for i in range(len(all_dates)):
+    val1 = interp_counts1[i]
+    val2 = interp_counts2[i]
+    
+    diff = val2 - val1
+    diff_values.append(diff)
+    
+    if val2 > 0:
+        pct = (diff / val2) * 100
+    else:
+        pct = 0
+    diff_percent.append(pct)
+    
+    if diff > 0:
+        diff_text.append(f'Lemaradás: {diff} ({pct:.1f}%)')
+    elif diff < 0:
+        diff_text.append(f'Előny: {abs(diff)} ({abs(pct):.1f}%)')
+    else:
+        diff_text.append('Holtverseny')
+
+# Láthatatlan trace a különbség megjelenítésére (y=0 helyett a grafikonon kívülre tesszük)
+fig.add_trace(go.Scatter(
+    x=all_dates,
+    y=[0] * len(all_dates),  # 0-ra tesszük, hogy láthatatlan legyen
+    mode='lines',
+    name='Különbség',
+    line=dict(width=0),
+    hovertemplate='<b>%{text}</b><extra></extra>',
+    text=diff_text,
+    showlegend=False,
+    yaxis='y2'  # Második y tengelyre tesszük
+))
+
+# Interpolált adatok - Személy 1 (láthatatlan, csak hoverhez)
+fig.add_trace(go.Scatter(
+    x=all_dates,
+    y=interp_counts1,
+    mode='lines',
+    name=f'{USER_NAME_1}',
+    line=dict(color='#2E86AB', width=0),
+    hovertemplate='%{y} találat<extra></extra>',
+    showlegend=False
+))
+
+# Interpolált adatok - Személy 2 (láthatatlan, csak hoverhez)
+fig.add_trace(go.Scatter(
+    x=all_dates,
+    y=interp_counts2,
+    mode='lines',
+    name=f'{USER_NAME_2}',
+    line=dict(color='#A23B72', width=0),
+    hovertemplate='%{y} találat<extra></extra>',
+    showlegend=False
+))
+
+# Látható adatok - Személy 1 (csak a tényleges pontok)
 fig.add_trace(go.Scatter(
     x=dates1,
     y=counts1,
     mode='lines+markers',
-    name=f'{USER_NAME_1} (tényleges)',
+    name=f'{USER_NAME_1}',
     line=dict(color='#2E86AB', width=3),
     marker=dict(size=8, symbol='circle'),
-    hovertemplate='<b>%{x|%Y-%m-%d}</b><br>Találatok: %{y}<br><extra></extra>'
+    hoverinfo='skip'  # Ne jelenjen meg dupla tooltip
 ))
 
-# Tényleges adatok - Személy 2
+# Látható adatok - Személy 2 (csak a tényleges pontok)
 fig.add_trace(go.Scatter(
     x=dates2,
     y=counts2,
     mode='lines+markers',
-    name=f'{USER_NAME_2} (tényleges)',
+    name=f'{USER_NAME_2}',
     line=dict(color='#A23B72', width=3),
     marker=dict(size=8, symbol='square'),
-    hovertemplate='<b>%{x|%Y-%m-%d}</b><br>Találatok: %{y}<br><extra></extra>'
+    hoverinfo='skip'  # Ne jelenjen meg dupla tooltip
 ))
 
 # Jövőbeli becslés - Személy 1
@@ -259,7 +345,7 @@ fig.add_trace(go.Scatter(
     name=f'{USER_NAME_1} (becslés)',
     line=dict(color='#2E86AB', width=2, dash='dash'),
     opacity=0.6,
-    hovertemplate='<b>%{x|%Y-%m-%d}</b><br>Becsült találatok: %{y:.0f}<br><extra></extra>'
+    hovertemplate='~%{y:.0f} találat<extra></extra>'
 ))
 
 # Jövőbeli becslés - Személy 2
@@ -270,7 +356,7 @@ fig.add_trace(go.Scatter(
     name=f'{USER_NAME_2} (becslés)',
     line=dict(color='#A23B72', width=2, dash='dash'),
     opacity=0.6,
-    hovertemplate='<b>%{x|%Y-%m-%d}</b><br>Becsült találatok: %{y:.0f}<br><extra></extra>'
+    hovertemplate='~%{y:.0f} találat<extra></extra>'
 ))
 
 # Utolérési pont
@@ -282,7 +368,8 @@ if can_catch and catch_date < future_dates[-1]:
         mode='markers',
         name=f'🎯 Utolérés',
         marker=dict(size=20, color='green', symbol='star', line=dict(color='darkgreen', width=2)),
-        hovertemplate=f'<b>Utolérés!</b><br>Dátum: {catch_date.strftime("%Y-%m-%d")}<br>Találatok: {catch_count:.0f}<br><extra></extra>'
+        hovertemplate=f'Utolérés: {catch_date.strftime("%Y-%m-%d")}<br>{catch_count:.0f} találat<extra></extra>',
+        showlegend=True
     ))
 
     # Függőleges vonal az utolérési pontnál
@@ -316,7 +403,7 @@ fig.update_layout(
     },
     xaxis_title='Dátum',
     yaxis_title='Találatok száma',
-    hovermode='closest',
+    hovermode='x unified',
     template='plotly_white',
     legend=dict(
         orientation="v",
@@ -329,7 +416,14 @@ fig.update_layout(
         borderwidth=1
     ),
     height=700,
-    font=dict(size=12)
+    font=dict(size=12),
+    yaxis2=dict(
+        overlaying='y',
+        side='right',
+        showgrid=False,
+        showticklabels=False,
+        range=[0, 1]
+    )
 )
 
 # Rács beállítása
@@ -337,7 +431,7 @@ fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
 
 # HTML mentése
-fig.write_html(OUTPUT_FILE,
+fig.write_html(OUTPUT_FILE, 
                config={'displayModeBar': True, 'displaylogo': False},
                include_plotlyjs='cdn',
                div_id='geocaching')
